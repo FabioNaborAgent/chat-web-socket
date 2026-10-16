@@ -1,7 +1,7 @@
 from core.database import Base
 
-from sqlalchemy import String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class User(Base):
@@ -23,7 +23,7 @@ class User(Base):
         nullable=False
     )
 
-    status: Mapped[bool] = mapped_column(
-        default=False,
-        nullable=False
+    chats: Mapped[list["Chat"]] = relationship(
+        "Chat",
+        back_populates="user"
     )

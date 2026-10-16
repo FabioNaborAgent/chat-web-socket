@@ -2,7 +2,7 @@ from core.database import Base
 from datetime import datetime
 
 from sqlalchemy import String, DateTime, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class Client(Base):
@@ -10,6 +10,7 @@ class Client(Base):
 
     __table_args__ = (
         UniqueConstraint(
+            "name",
             "telephone",
             "email",
             name="uq_client_name_telephone_email"
@@ -41,7 +42,7 @@ class Client(Base):
         nullable=False
     )
 
-    status: Mapped[bool] = mapped_column(
-        default=True,
-        nullable=False
+    chats: Mapped[list["Chat"]] = relationship(
+        "Chat",
+        back_populates="client"
     )

@@ -18,8 +18,6 @@ class Chat(Base):
 
     subject: Mapped[str] = mapped_column(
         String(100),
-        unique=True,
-        index=True
     )
 
     user_id: Mapped[int] = mapped_column(
@@ -40,4 +38,8 @@ class Chat(Base):
 
     user = relationship("User", back_populates="chats")
     client = relationship("Client", back_populates="chats")
+    messages: Mapped[list["Message"]] = relationship(
+        "Message",
+        back_populates="chat"
+    )
 

@@ -31,9 +31,7 @@ class Message(Base):
     )
 
     message:Mapped[str] = mapped_column(
-        String(150),
-        unique=True,
-        index=True
+        String(255),
     )
 
-    chats = relationship("Chat", back_populates="messages")
+    chat = relationship("Chat", back_populates="messages")
