@@ -1,7 +1,9 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from repositories.message_repository import MessageRepository
+from services.message_service import MessageService
 from core.connection_manager import ConnectionManager
 from repositories.chat_repository import ChatRepository
 from repositories.client_repository import ClientRepository
@@ -38,18 +40,18 @@ def get_chat_service(db: AsyncSession = Depends(get_db),
     client_repository = ClientRepository(db)
     return ChatService(chat_repository, client_repository, user_repository, manager, jwt)
 
-async def get_authenticate(credentials:HTTPAuthorizationCredentials = Depends(security), jwt: JwtService = Depends(get_jwt_service)):
-    token = credentials.credentials
+def get_message_service(db: AsyncSession = Depends(get_db), 
+                     manager: ConnectionManager = Depends(get_connection_manager)):
+    message_repository = MessageRepository(db)
+    chat_repository = ChatRepository(db)
 
+    return MessageService(message_repository, chat_repository, manager)
+
+async def get_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)):
     try:
-        return jwt.valid(token)
-    except jwt.ExpiredSignatureError:
+        return jwt.valid(access_token)
+    except jwt.ExpiredSignatureError or jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expirado",
-        )
-    except jwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido",
+            detail="Acesso negado",
         )

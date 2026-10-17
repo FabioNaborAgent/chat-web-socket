@@ -11,7 +11,7 @@ class MessageRepository:
         result = await self.db.execute(
             select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at)
         )
-        return result.scalar().all()
+        return result.scalars().all()
 
     async def create(self, message: Message):
         self.db.add(message)

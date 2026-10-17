@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import HTTPException, status
 
 from core.connection_manager import ConnectionManager
@@ -24,6 +26,18 @@ class ChatService:
         self.user_repository = user_repository
         self.ws_manager = ws_manager
         self.jwt = jwt
+
+    async def get_by_user(self, type:Literal['agent', 'client'], id:int):
+        print(type)
+        if type == 'client':
+            raise HTTPException(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Acesso negado!"
+                        )
+        chats = await self.chat_repository.get_by_user(id)
+        if not chats:
+            return []
+        return chats
 
     async def create(self, data:ChatCreate):
         agents_online = await self.ws_manager.get_online('agent')
@@ -55,10 +69,13 @@ class ChatService:
         )
         
         await self.ws_manager.send('agent', agent_id, {
-            "event": "new_chat",
+            "event": "new-chat",
             "data": {
                 "id": chat.id,
+                "name": client.name,
                 "subject": chat.subject,
+                "email":client.email,
+                "telephone":client.telephone,
                 "user_id": chat.user_id,
                 "client_id": chat.client_id
             }

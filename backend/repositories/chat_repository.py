@@ -2,8 +2,10 @@ from typing import List
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from models.client import Client
 from models.chat import Chat
 from models.user import User
+from models.message import Message
 
 class ChatRepository:
 
@@ -18,9 +20,21 @@ class ChatRepository:
 
     async def get_by_user(self, user_id: int):
         result = await self.db.execute(
-            select(Chat).where(Chat.user_id == user_id)
+            select(Chat.id, Client.name, Chat.subject, Client.email, Client.telephone, func.max(Message.created_at).label("last_message"))
+            .select_from(Chat)
+            .join(Client, Client.id == Chat.client_id)
+            .outerjoin(Message, Message.chat_id == Chat.id)
+            .where(Chat.user_id == user_id)
+            .group_by(
+                Chat.id,
+                Client.name,
+                Chat.subject,
+                Client.email,
+                Client.telephone
+            )
+            .order_by(func.max(Message.created_at).desc().nulls_last())
         )
-        return result.scalar().all()
+        return [dict(row) for row in result.mappings().all()]
 
     async def get_least_busy_agent(self, user_ids:List[int]):
         if not user_ids:

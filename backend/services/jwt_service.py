@@ -47,7 +47,7 @@ class JwtService:
             algorithm=self.algorithm,
         )
 
-    def valid(self, token:str):
+    def valid(self, token:str) :
         try:
             return jwt.decode(
                 token,

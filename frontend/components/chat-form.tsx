@@ -8,15 +8,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { chatSchema, ChatFormData } from "@/schemas/chat-schema";
 import { useCreateChat } from "@/hooks/chat-hook";
-import { useAuth } from "@/providers/auth-provider";
 
 import { toast } from "sonner";
 import { AxiosError } from "axios";
+import { CardDefault } from "./card-default";
+import { useRouter } from "next/navigation";
 
 
 export function ChatForm() {
 
-    const { login } = useAuth();
+    const router = useRouter();
 
     const createChat = useCreateChat();
 
@@ -35,7 +36,7 @@ export function ChatForm() {
         createChat.mutate(data, {
             onSuccess: (response) => {
                 console.log(response)
-                login(response.access_token, response.chat_id.toString())
+                router.replace(`/chat/${response.chat_id.toString()}`)
             },
             onError: (error) => {
                 if (error instanceof AxiosError) {
@@ -53,12 +54,7 @@ export function ChatForm() {
     }
 
     return (
-        <Card className="w-full">
-            <CardHeader>
-                <CardTitle>Novo Assunto</CardTitle>
-                <CardDescription>Preecha os campos abaixo para iniciar um novo atendimento</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <CardDefault title="Novo Assunto" description="Preecha os campos abaixo para iniciar um novo atendimento">
               <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
                   <Field>
                       <FieldLabel>Nome</FieldLabel>
@@ -93,7 +89,6 @@ export function ChatForm() {
                   </Field>
                   <Button type="submit" disabled={createChat.isPending}>{createChat.isPending ? "Iniciando..." : "Iniciar"}</Button>
               </form>
-            </CardContent>
-        </Card>
+        </CardDefault>
     )
 }
