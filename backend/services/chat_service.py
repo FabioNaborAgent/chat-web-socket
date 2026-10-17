@@ -27,11 +27,9 @@ class ChatService:
 
     async def create(self, data:ChatCreate):
         agents_online = await self.ws_manager.get_online('agent')
-        print(agents_online)
-        agent = await self.chat_repository.get_least_busy_agent(agents_online)
-        print(agent)
+        agent_id = await self.chat_repository.get_least_busy_agent(agents_online)
 
-        if not agent:
+        if not agent_id:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Nenhum agente online no momento."
@@ -39,10 +37,6 @@ class ChatService:
 
         client = await self.client_repository.get(data.name, data.email, data.telephone)
         
-        print(client)
-        
-        sleep(5)
-
         if not client:
             client = await self.client_repository.create(
                 Client(
@@ -55,10 +49,20 @@ class ChatService:
         chat = await self.chat_repository.create(
             Chat(
                 subject=data.subject, 
-                user_id=agent.id, 
+                user_id=agent_id, 
                 client_id=client.id
             )
         )
+        
+        await self.ws_manager.send('agent', agent_id, {
+            "event": "new_chat",
+            "data": {
+                "id": chat.id,
+                "subject": chat.subject,
+                "user_id": chat.user_id,
+                "client_id": chat.client_id
+            }
+        })
 
         return {
             'chat_id':chat.id,

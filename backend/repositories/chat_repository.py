@@ -27,14 +27,15 @@ class ChatRepository:
             return None
     
         result = await self.db.execute(
-            select(User.id, func.count(Chat.id))
+            select(User.id)
             .select_from(User)
             .outerjoin(Chat, Chat.user_id == User.id)
             .where(User.id.in_(user_ids)).group_by(User.id).order_by(func.count(Chat.id).asc()).limit(1)
         )
-        return result.first()
+        return result.scalar_one_or_none()
 
     async def create(self, chat: Chat):
         self.db.add(chat)
-        await self.db.flush()
+        await self.db.commit()
+        await self.db.refresh(chat)
         return chat

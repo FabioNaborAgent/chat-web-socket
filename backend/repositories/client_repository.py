@@ -15,5 +15,6 @@ class ClientRepository:
 
     async def create(self, client: Client):
         self.db.add(client)
-        await self.db.flush()
+        await self.db.commit()
+        await self.db.refresh(client)
         return client

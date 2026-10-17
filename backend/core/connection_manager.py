@@ -1,6 +1,6 @@
 
 from collections import defaultdict
-from typing import Literal
+from typing import Any, Literal
 from fastapi import WebSocket
 import asyncio
 
@@ -36,13 +36,13 @@ class ConnectionManager:
         async with self.lock:
             return [user_id for user_id, socket in self.connections[type].items() if socket]
 
-    async def send(self, type:Literal['client', 'agent'], id: int, message: str):
+    async def send(self, type:Literal['client', 'agent'], id: int, message: dict[str, Any]):
         async with self.lock:
             connections = list(self.connections[type].get(id, set()))
 
         for websocket in connections:
             try:
-                await websocket.send_text(message)
+                await websocket.send_json(message)
             except Exception:
                 await self.disconnect(type, id, websocket)
 
