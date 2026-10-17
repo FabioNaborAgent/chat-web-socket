@@ -1,5 +1,6 @@
 
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect, WebSocketException, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from core.connection_manager import ConnectionManager
 from core.dependencies import get_connection_manager, get_jwt_service
@@ -9,6 +10,14 @@ from routes.chat_route import chat_router
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000","http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(chat_router)

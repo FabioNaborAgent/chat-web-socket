@@ -15,5 +15,6 @@ class MessageRepository:
 
     async def create(self, message: Message):
         self.db.add(message)
-        await self.db.flush()
+        await self.db.commit()
+        await self.db.refresh(message)
         return message
