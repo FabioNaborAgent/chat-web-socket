@@ -14,25 +14,32 @@ load_dotenv(BASE_DIR / ".env")
 
 class JwtService:
 
-    def __init__(self, secret_key:str | None = None, expire_at:int=30, algorithm:str = "HS256"):
-        print(os.environ)
+    def __init__(self, secret_key:str | None = None, expire_at:int=60, algorithm:str = "HS256"):
         self.secret_key = secret_key if secret_key is not None else os.environ["JWT_SECRET_KEY"]
         self.algorithm = algorithm
         self.expire_at = expire_at
     
-    def create(self, id:int, type:Literal['client', 'user']):
+    def create(self, id:int, type:Literal['client', 'agent'], chat_id:int | None = None):
 
-        if type not in ['client', 'user']:
+        payload = {}
+
+        if type not in ['client', 'agent']:
             raise ValueError('Tipo de usuário inválido!')
 
+        if type == 'client':
+            if not chat_id:
+                raise ValueError('Informe o chat_id!')
+            payload['chat_id'] = str(chat_id)
+            
         now = datetime.now(timezone.utc)
 
-        payload = {
-            "sub": str(id),
+        payload.update({
+            "id": str(id),
             "type":type,
             "iat": now,
             "exp": now + timedelta(minutes=self.expire_at),
-        }
+        })
+
 
         return jwt.encode(
             payload,
@@ -46,9 +53,7 @@ class JwtService:
                 token,
                 self.secret_key,
                 algorithms=[self.algorithm],
-                options={'require': ['exp', 'iat', 'sub', 'type']},
+                options={'require': ['id', 'type', 'iat', 'exp']},
             )
         except InvalidTokenError:
             return None
-
-jwt_service = JwtService()

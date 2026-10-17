@@ -1,0 +1,40 @@
+from typing import List
+
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from models.chat import Chat
+from models.user import User
+
+class ChatRepository:
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_by_id(self, chat_id: int):
+        result = await self.db.execute(
+            select(Chat).where(Chat.id == chat_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_user(self, user_id: int):
+        result = await self.db.execute(
+            select(Chat).where(Chat.user_id == user_id)
+        )
+        return result.scalar().all()
+
+    async def get_least_busy_agent(self, user_ids:List[int]):
+        if not user_ids:
+            return None
+    
+        result = await self.db.execute(
+            select(User.id, func.count(Chat.id))
+            .select_from(User)
+            .outerjoin(Chat, Chat.user_id == User.id)
+            .where(User.id.in_(user_ids)).group_by(User.id).order_by(func.count(Chat.id).asc()).limit(1)
+        )
+        return result.first()
+
+    async def create(self, chat: Chat):
+        self.db.add(chat)
+        await self.db.flush()
+        return chat

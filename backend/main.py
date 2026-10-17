@@ -1,20 +1,28 @@
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, WebSocketException, status
+from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect, WebSocketException, status
 
-from schemas.auth import AuthResquest
-
-from core.connection_manager import manager
-from services.jwt import jwt_service
+from core.connection_manager import ConnectionManager
+from core.dependencies import get_connection_manager, get_jwt_service
+from services.jwt_service import JwtService
+from routes.auth_route import auth_router
+from routes.chat_route import chat_router
 
 
 app = FastAPI()
 
+app.include_router(auth_router)
+app.include_router(chat_router)
+
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, 
+                             manager:ConnectionManager = Depends(get_connection_manager),
+                             jwt:JwtService = Depends(get_jwt_service)):
 
-    token = websocket.cookies.get("access_token")
-
-    payload = jwt_service.valid(token)
+    token = websocket.cookies.get('access_token')
+    print(token)
+    payload = jwt.valid(token)
+    print(payload)
+    
 
     if not payload:
         raise WebSocketException(
@@ -24,7 +32,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         id = int(payload.get('id'))
 
-        await manager.connect(id, websocket)
+        await manager.connect(payload.get('type'), id, websocket)
 
         while True:
             message = await websocket.receive_text()
@@ -36,10 +44,3 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print("Cliente desconectado")
 
-
-@app.post("/login")
-async def login(body:AuthResquest):
-    print(body)
-    return {
-        "slaiced":"boa"
-    }
