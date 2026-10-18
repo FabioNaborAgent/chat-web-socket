@@ -2,6 +2,7 @@ import { User2Icon } from "lucide-react";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "./ui/item";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
+import { InformationDialog } from "./informations";
 
 export function ChatItem({data}:{data:ChatListResponse}) {
     const router = useRouter()
@@ -18,7 +19,8 @@ export function ChatItem({data}:{data:ChatListResponse}) {
             </ItemContent>
 
             <ItemActions>
-                <Button onClick={() => router.push(`/chat/${data.id}`)} >Acessar</Button>
+                <InformationDialog data={data} />
+                <Button onClick={() => router.push(`/chat/${data.id}`)} >Entrar</Button>
             </ItemActions>
         </Item>
     )

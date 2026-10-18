@@ -17,7 +17,7 @@ export function proxy(request: NextRequest) {
     const token = request.cookies.get("access_token")?.value;
 
     if (!token) {
-        if (pathname == '/login') {
+        if (['/login', '/suporte', '/'].includes(pathname)) {
             return NextResponse.next();
         }
         return NextResponse.redirect(
@@ -40,11 +40,11 @@ export function proxy(request: NextRequest) {
             );
         }
         return NextResponse.redirect(
-            new URL(`/chat/${payload.chat_id}`, request.url)
+            new URL(chatClient, request.url)
         );
     }
 
-    if (pathname == '/login') {
+    if (!pathname.startsWith('/chat') || pathname == '') {
         return NextResponse.redirect(
             new URL(`/chat`, request.url)
         );
@@ -54,5 +54,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/chat/:path*", "/login", "/login/:path*"],
+    matcher: ["/chat/:path*", "/login", "/login/:path*", "/suporte", "/suporte/:path*", "/"],
 };

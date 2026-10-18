@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
+from fastapi import HTTPException
 import jwt
 from jwt.exceptions import InvalidTokenError
 
@@ -14,10 +15,10 @@ load_dotenv(BASE_DIR / ".env")
 
 class JwtService:
 
-    def __init__(self, secret_key:str | None = None, expire_at:int=60, algorithm:str = "HS256"):
+    def __init__(self, secret_key:str | None = None, expire_at:int | None = None, algorithm:str = "HS256"):
         self.secret_key = secret_key if secret_key is not None else os.environ["JWT_SECRET_KEY"]
         self.algorithm = algorithm
-        self.expire_at = expire_at
+        self.expire_at = expire_at if expire_at is not None else int(os.environ["EXPIRE_AT"])
     
     def create(self, id:int, type:Literal['client', 'agent'], chat_id:int | None = None):
 
@@ -49,11 +50,17 @@ class JwtService:
 
     def valid(self, token:str) :
         try:
-            return jwt.decode(
+            payload = jwt.decode(
                 token,
                 self.secret_key,
                 algorithms=[self.algorithm],
                 options={'require': ['id', 'type', 'iat', 'exp']},
             )
+            if payload is None:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Token inválido ou expirado",
+                )
+            return payload
         except InvalidTokenError:
             return None

@@ -1,5 +1,7 @@
 from core.database import Base
 
+from sqlalchemy import true
+
 from datetime import datetime
 
 from sqlalchemy import String, DateTime, ForeignKey
@@ -34,6 +36,12 @@ class Chat(Base):
         DateTime,
         default=datetime.utcnow,
         nullable=False
+    )
+
+    status: Mapped[bool] = mapped_column(
+        default=True,
+        server_default=true(),
+        nullable=False,
     )
 
     user = relationship("User", back_populates="chats")

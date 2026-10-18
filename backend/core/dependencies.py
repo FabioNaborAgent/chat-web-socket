@@ -49,6 +49,11 @@ def get_message_service(db: AsyncSession = Depends(get_db),
 
 async def get_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)):
     try:
+        if not access_token:
+            raise HTTPException(
+                status_code=401,
+                detail="Não autenticado",
+            )
         return jwt.valid(access_token)
     except jwt.ExpiredSignatureError or jwt.InvalidTokenError:
         raise HTTPException(

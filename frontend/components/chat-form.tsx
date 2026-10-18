@@ -54,7 +54,8 @@ export function ChatForm() {
     }
 
     return (
-        <CardDefault title="Novo Assunto" description="Preecha os campos abaixo para iniciar um novo atendimento">
+        <CardDefault title="Solicitar Suporte" description="Preecha os campos abaixo para iniciar um novo atendimento">
+              
               <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
                   <Field>
                       <FieldLabel>Nome</FieldLabel>

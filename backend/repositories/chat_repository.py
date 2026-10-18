@@ -18,13 +18,22 @@ class ChatRepository:
         )
         return result.scalar_one_or_none()
 
+    async def finalized(self, chat_id: int):
+        chat = await self.get_by_id(chat_id)
+        if chat is None:
+            return None
+        chat.status = False
+        await self.db.commit()
+        await self.db.refresh(chat)
+        return chat
+
     async def get_by_user(self, user_id: int):
         result = await self.db.execute(
             select(Chat.id, Client.name, Chat.subject, Client.email, Client.telephone, func.max(Message.created_at).label("last_message"))
             .select_from(Chat)
             .join(Client, Client.id == Chat.client_id)
             .outerjoin(Message, Message.chat_id == Chat.id)
-            .where(Chat.user_id == user_id)
+            .where(Chat.user_id == user_id, Chat.status == True)
             .group_by(
                 Chat.id,
                 Client.name,
@@ -44,7 +53,7 @@ class ChatRepository:
             select(User.id)
             .select_from(User)
             .outerjoin(Chat, Chat.user_id == User.id)
-            .where(User.id.in_(user_ids)).group_by(User.id).order_by(func.count(Chat.id).asc()).limit(1)
+            .where(User.id.in_(user_ids), Chat.status == True).group_by(User.id).order_by(func.count(Chat.id).asc()).limit(1)
         )
         return result.scalar_one_or_none()
 

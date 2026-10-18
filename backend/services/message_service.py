@@ -42,6 +42,12 @@ class MessageService:
                         detail="Você não faz parte desse chat!"
                     )
 
+        if (not chat.status):
+             raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Chat já encerrado!"
+            )
+
         result = await self.chatRepository.create(Message(
             chat_id=chat_id,
             is_client=(type == "client"),

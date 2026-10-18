@@ -50,7 +50,7 @@ export function ChatList() {
     }, [])
 
     return (
-        <CardDefault title={`Atendimento ${status}` } description="Seus atendimentos">
+        <CardDefault title={`Atendimento` } description="Seus atendimentos">
             {chats.map((chat) => (
                 <ChatItem
                     key={chat.id}

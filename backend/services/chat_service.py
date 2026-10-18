@@ -39,6 +39,38 @@ class ChatService:
             return []
         return chats
 
+    async def finalized(self, id:int, type:Literal['agent', 'client'], chat_id:int):
+        chat = await self.chat_repository.get_by_id(chat_id)
+
+        if not chat:
+            raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Não encontrado"
+        )
+
+        if (type == 'agent' and str(chat.user_id) != id) or (type == 'client' and str(chat.client_id) != id):
+            raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Você não faz parte desse chat!"
+            )
+
+        result = await self.chat_repository.finalized(chat_id)
+
+        ws_payload = {
+            "event": "new-message",
+            "data": {
+                "id": chat.id+99999,
+                "chat_id": chat.id,
+                "is_client": type == 'client',
+                "message": '[Atenção] Chat Finalizado',
+            }
+        }
+
+        await self.ws_manager.send('client', chat.client_id, ws_payload)
+        await self.ws_manager.send('agent', chat.user_id, ws_payload)
+
+        return result
+
     async def create(self, data:ChatCreate):
         agents_online = await self.ws_manager.get_online('agent')
         agent_id = await self.chat_repository.get_least_busy_agent(agents_online)

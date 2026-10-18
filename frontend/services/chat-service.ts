@@ -9,7 +9,6 @@ export async function createChat(data:ChatData):Promise<ChatCreateResponse> {
 
 export async function listChat():Promise<ChatListResponse[]> {
     const response = await api.get<ChatListResponse[]>("chat")
-    console.log(response)
     return response.data;
 }
 
@@ -20,6 +19,10 @@ export async function createMessageChat({chat_id, data}:{chat_id:string, data:Me
 
 export async function listMessageChat({chat_id}:{chat_id:string}):Promise<ChatMessageResponse[]> {
     const response = await api.get<ChatMessageResponse[]>(`chat/${chat_id}/message`)
-    console.log(response)
+    return response.data;
+}
+
+export async function finalizedChat({chat_id}:{chat_id:string}):Promise<undefined> {
+    const response = await api.put(`chat/${chat_id}`)
     return response.data;
 }
