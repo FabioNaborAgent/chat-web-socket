@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Field, FieldLabel } from "./ui/field";
+import { Field, FieldError, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 
@@ -78,6 +78,7 @@ export function MessageForm({chat_id}:{chat_id:string}) {
                     <Button type="submit" disabled={useCreateChatMessage.isPending}>{useCreateChatMessage.isPending ? "Enviado..." : "Enviar"}</Button>
                     <Button variant='destructive' type="button" onClick={onFinalized} disabled={useFinalized.isPending}>{useFinalized.isPending ? "Finalizando..." : "Finalizar"}</Button>
                 </div>
+                <FieldError>{form.formState.errors.message?.message}</FieldError>
             </Field>
         </form>
     );

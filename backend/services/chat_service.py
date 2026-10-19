@@ -2,6 +2,7 @@ from typing import Literal
 
 from fastapi import HTTPException, status
 
+from services.message_service import MessageService
 from core.connection_manager import ConnectionManager
 from models.chat import Chat
 from models.client import Client
@@ -19,16 +20,17 @@ class ChatService:
     def __init__(self, chat_repository:ChatRepository, 
                  client_repository:ClientRepository,
                  user_repository:UserRepository, 
+                 message_service:MessageService,
                  ws_manager:ConnectionManager,
                  jwt:JwtService):
         self.chat_repository = chat_repository
         self.client_repository = client_repository
         self.user_repository = user_repository
+        self.message_service = message_service
         self.ws_manager = ws_manager
         self.jwt = jwt
 
     async def get_by_user(self, type:Literal['agent', 'client'], id:int):
-        print(type)
         if type == 'client':
             raise HTTPException(
                             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -42,6 +44,9 @@ class ChatService:
     async def finalized(self, id:int, type:Literal['agent', 'client'], chat_id:int):
         chat = await self.chat_repository.get_by_id(chat_id)
 
+        if chat.status == False:
+            return chat
+
         if not chat:
             raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -54,20 +59,11 @@ class ChatService:
                         detail="Você não faz parte desse chat!"
             )
 
-        result = await self.chat_repository.finalized(chat_id)
+        chat.status = False
 
-        ws_payload = {
-            "event": "new-message",
-            "data": {
-                "id": chat.id+99999,
-                "chat_id": chat.id,
-                "is_client": type == 'client',
-                "message": '[Atenção] Chat Finalizado',
-            }
-        }
+        result = await self.chat_repository.update(chat)
 
-        await self.ws_manager.send('client', chat.client_id, ws_payload)
-        await self.ws_manager.send('agent', chat.user_id, ws_payload)
+        await self.message_service.create(id, chat_id, type, '[Atenção] Chat Finalizado', False)
 
         return result
 

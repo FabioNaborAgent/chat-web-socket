@@ -1,4 +1,4 @@
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, WebSocketException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -32,20 +32,21 @@ def get_auth_service(db: AsyncSession = Depends(get_db),
     repository = UserRepository(db)
     return AuthService(repository, jwt)
 
-def get_chat_service(db: AsyncSession = Depends(get_db), 
-                     manager: ConnectionManager = Depends(get_connection_manager),
-                     jwt:JwtService = Depends(get_jwt_service)):
-    chat_repository = ChatRepository(db)
-    user_repository = UserRepository(db)
-    client_repository = ClientRepository(db)
-    return ChatService(chat_repository, client_repository, user_repository, manager, jwt)
-
 def get_message_service(db: AsyncSession = Depends(get_db), 
                      manager: ConnectionManager = Depends(get_connection_manager)):
     message_repository = MessageRepository(db)
     chat_repository = ChatRepository(db)
 
     return MessageService(message_repository, chat_repository, manager)
+
+def get_chat_service(db: AsyncSession = Depends(get_db), 
+                     manager: ConnectionManager = Depends(get_connection_manager),
+                     message_service: MessageService = Depends(get_message_service),
+                     jwt:JwtService = Depends(get_jwt_service)):
+    chat_repository = ChatRepository(db)
+    user_repository = UserRepository(db)
+    client_repository = ClientRepository(db)
+    return ChatService(chat_repository, client_repository, user_repository, message_service, manager, jwt)
 
 async def get_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)):
     try:
@@ -58,5 +59,19 @@ async def get_authenticate(access_token: str | None = Cookie(default=None), jwt:
     except jwt.ExpiredSignatureError or jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Acesso negado",
+            detail="Não autenticado ou token expirado",
+        )
+
+async def get_websocket_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)):
+    try:
+        if not access_token:
+            raise HTTPException(
+                status_code=401,
+                detail="Não autenticado",
+            )
+        return jwt.valid(access_token)
+    except jwt.ExpiredSignatureError or jwt.InvalidTokenError:
+        raise WebSocketException(
+            status_code=status.WS_1008_POLICY_VIOLATION,
+            detail="Não autenticado ou token expirado",
         )

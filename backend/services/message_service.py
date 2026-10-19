@@ -27,7 +27,7 @@ class MessageService:
 
         return await self.messageRepository.get_by_chat(chat_id)
 
-    async def create(self, id:int, chat_id:int, type:Literal['agent', 'client'], message:str):
+    async def create(self, id:int, chat_id:int, type:Literal['agent', 'client'], message:str, check_chat_closed:bool=True):
         chat = await self.chatRepository.get_by_id(chat_id)
 
         if not chat:
@@ -42,7 +42,7 @@ class MessageService:
                         detail="Você não faz parte desse chat!"
                     )
 
-        if (not chat.status):
+        if not chat.status and check_chat_closed:
              raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Chat já encerrado!"
@@ -63,7 +63,7 @@ class MessageService:
                 "message": message,
             }
         }
-        
+
         await self.ws_manager.send('client', chat.client_id, ws_payload)
         await self.ws_manager.send('agent', chat.user_id, ws_payload)
         

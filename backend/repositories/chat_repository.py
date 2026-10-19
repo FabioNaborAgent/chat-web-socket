@@ -18,11 +18,7 @@ class ChatRepository:
         )
         return result.scalar_one_or_none()
 
-    async def finalized(self, chat_id: int):
-        chat = await self.get_by_id(chat_id)
-        if chat is None:
-            return None
-        chat.status = False
+    async def update(self, chat: Chat):
         await self.db.commit()
         await self.db.refresh(chat)
         return chat
