@@ -9,26 +9,11 @@ import { MessageForm } from "./message-form";
 
 export function Message({chat_id}:{chat_id:string}) {
 
-    const { lastEvent } = useWebSocket();
+    const { status, lastEvent } = useWebSocket();
 
     const [messages, setMessages] = useState<ChatMessageResponse[]>([])
 
     const useListMessage = useListMessageChat()
-
-    useEffect(() => {
-        if (lastEvent?.event == "new-message") {
-            if (String(lastEvent.data.chat_id) == chat_id) {
-                setMessages((previousMessages) => {
-                    const newMessage = lastEvent.data as ChatMessageResponse;
-                    if (previousMessages.some((message) => message.id === newMessage.id)) {
-                        return previousMessages;
-                    }
-                    return [...previousMessages, newMessage];
-                });
-            }
-            return;
-        };
-    }, [lastEvent, chat_id])
 
     useEffect(() => {
         useListMessage.mutate({
@@ -50,7 +35,22 @@ export function Message({chat_id}:{chat_id:string}) {
                 }
             }
         })
-    }, [])
+    }, [status, chat_id])
+
+    useEffect(() => {
+        if (lastEvent?.event == "new-message") {
+            if (String(lastEvent.data.chat_id) == chat_id) {
+                setMessages((previousMessages) => {
+                    const newMessage = lastEvent.data as ChatMessageResponse;
+                    if (previousMessages.some((message) => message.id === newMessage.id)) {
+                        return previousMessages;
+                    }
+                    return [...previousMessages, newMessage];
+                });
+            }
+            return;
+        };
+    }, [lastEvent, chat_id])
 
 
     return (

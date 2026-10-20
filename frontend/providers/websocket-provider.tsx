@@ -12,49 +12,79 @@ export function WebSocketProvider({ children }: { children: React.ReactNode}) {
     useEffect(() => {
     
         let active = true;
+
+        let socket: WebSocket | null = null;
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+        let attempts = 0;
     
         setStatus("connecting");
     
-        const socket = new WebSocket(process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000/ws");
-    
-        socket.onopen = () => {
-            if (active) setStatus("connected");
-        };
-    
-        socket.onmessage = (message) => {
+        const url = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000/ws";
+
+        const connect = () => {
             if (!active) return;
-    
-            try {
-                const event = JSON.parse(message.data);
-    
-                if (
-                    typeof event === "object" &&
-                    event !== null &&
-                    "event" in event &&
-                    "data" in event &&
-                    (event.event === "new-message" || event.event === "new-chat")
-                    
-                ) {
-                    setLastEvent({
-                        event: event.event,
-                        data: event.data,
-                    });
+
+            setStatus('connecting');
+
+            socket = new WebSocket(url);
+
+            socket.onopen = () => {
+                if (!active) return;
+                attempts = 0;
+                setStatus('connected');
+            };
+            socket.onmessage = (message) => {
+                if (!active) return;
+        
+                try {
+                    const event = JSON.parse(message.data);
+        
+                    if (
+                        typeof event === "object" &&
+                        event !== null &&
+                        "event" in event &&
+                        "data" in event &&
+                        (event.event === "new-message" || event.event === "new-chat")
+                        
+                    ) {
+                        setLastEvent({
+                            event: event.event,
+                            data: event.data,
+                        });
+                    }
+                } catch {
+                    console.warn("Formato não aceito");
                 }
-            } catch {
-                console.warn("O servidor enviou uma mensagem fora do formato JSON.");
-            }
-        };
+            };
+        
+            socket.onclose = () => {
+                if (!active) return;
+
+                setStatus('disconnected');
+
+                const delay = Math.min(
+                    1000 * 2 ** attempts,
+                    30000
+                );
+
+                attempts++;
+
+                reconnectTimer = setTimeout(connect, delay);
+            };
+        
+            socket.onerror = () => {
+                socket?.close();
+            };
+        }
     
-        socket.onclose = () => {
-            if (active) setStatus("disconnected");
-        };
-    
-        socket.onerror = () => {
-            if (active) setStatus("disconnected");
-        };
+        connect()
 
         return () => {
-            socket.close();
+            active = false;
+            if (reconnectTimer !== null) {
+                clearTimeout(reconnectTimer);
+            }
+            socket?.close();
         };
     }, [])
 

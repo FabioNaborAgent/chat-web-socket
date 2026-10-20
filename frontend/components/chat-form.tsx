@@ -35,7 +35,6 @@ export function ChatForm() {
     const onSubmit = (data:ChatFormData) => {
         createChat.mutate(data, {
             onSuccess: (response) => {
-                console.log(response)
                 router.replace(`/chat/${response.chat_id.toString()}`)
             },
             onError: (error) => {

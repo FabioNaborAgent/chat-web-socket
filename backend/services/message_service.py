@@ -2,6 +2,7 @@ from typing import Literal
 
 from fastapi import HTTPException, status
 
+from schemas.authenticated import Authenticated
 from core.connection_manager import ConnectionManager
 from models.message import Message
 from repositories.chat_repository import ChatRepository
@@ -16,10 +17,10 @@ class MessageService:
         self.chatRepository = chatRepository
         self.ws_manager = ws_manager
 
-    async def get_by_chat(self, id:int, type:Literal['agent', 'client'], chat_id:int):
+    async def get_by_chat(self, auth:Authenticated, chat_id:int):
         chat = await self.chatRepository.get_by_id(chat_id)
 
-        if (type == 'agent' and str(chat.user_id) != id) or (type == 'client' and str(chat.client_id) != id):
+        if (auth.type == 'agent' and int(chat.user_id) != auth.auth_id) or (auth.type == 'client' and int(chat.client_id) != auth.auth_id):
                     raise HTTPException(
                                 status_code=status.HTTP_403_FORBIDDEN,
                                 detail="Você não faz parte desse chat!"
@@ -27,7 +28,7 @@ class MessageService:
 
         return await self.messageRepository.get_by_chat(chat_id)
 
-    async def create(self, id:int, chat_id:int, type:Literal['agent', 'client'], message:str, check_chat_closed:bool=True):
+    async def create(self, auth:Authenticated, chat_id:int, message:str, check_chat_closed:bool=True):
         chat = await self.chatRepository.get_by_id(chat_id)
 
         if not chat:
@@ -35,8 +36,8 @@ class MessageService:
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail="Chat não localizado!"
                     )
-        
-        if (type == 'agent' and str(chat.user_id) != id) or (type == 'client' and str(chat.client_id) != id):
+
+        if (auth.type == 'agent' and chat.user_id != auth.auth_id) or (auth.type == 'client' and chat.client_id != auth.auth_id):
             raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="Você não faz parte desse chat!"
@@ -50,7 +51,7 @@ class MessageService:
 
         result = await self.chatRepository.create(Message(
             chat_id=chat_id,
-            is_client=(type == "client"),
+            is_client=(auth.type == "client"),
             message=message
         ))
 
@@ -59,12 +60,12 @@ class MessageService:
             "data": {
                 "id": result.id,
                 "chat_id": chat.id,
-                "is_client": type == 'client',
+                "is_client": auth.type == 'client',
                 "message": message,
             }
         }
 
-        await self.ws_manager.send('client', chat.client_id, ws_payload)
-        await self.ws_manager.send('agent', chat.user_id, ws_payload)
+        await self.ws_manager.send(Authenticated(chat.client_id, 'client'), ws_payload)
+        await self.ws_manager.send(Authenticated(chat.user_id, 'agent'), ws_payload)
         
         return result

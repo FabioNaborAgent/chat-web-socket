@@ -2,6 +2,7 @@ from fastapi import Cookie, Depends, HTTPException, WebSocketException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from schemas.authenticated import Authenticated
 from repositories.message_repository import MessageRepository
 from services.message_service import MessageService
 from core.connection_manager import ConnectionManager
@@ -9,7 +10,6 @@ from repositories.chat_repository import ChatRepository
 from repositories.client_repository import ClientRepository
 from services.chat_service import ChatService
 from services.jwt_service import JwtService
-import jwt
 
 from core.database import get_db
 from repositories.user_repository import UserRepository
@@ -48,28 +48,38 @@ def get_chat_service(db: AsyncSession = Depends(get_db),
     client_repository = ClientRepository(db)
     return ChatService(chat_repository, client_repository, user_repository, message_service, manager, jwt)
 
-async def get_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)):
+async def get_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)) -> Authenticated:
+    if not access_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Não autenticado",
+        )
     try:
-        if not access_token:
-            raise HTTPException(
-                status_code=401,
-                detail="Não autenticado",
+        valid = jwt.valid(access_token)
+        return Authenticated(
+                auth_id=int(valid["id"]),
+                type=valid["type"],
+                chat_id=int(valid["chat_id"]) if valid.get("chat_id") is not None else None,
             )
-        return jwt.valid(access_token)
     except jwt.ExpiredSignatureError or jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Não autenticado ou token expirado",
         )
 
-async def get_websocket_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)):
+async def get_websocket_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)) -> Authenticated:
+    if not access_token:
+        raise WebSocketException(
+            status_code=status.WS_1008_POLICY_VIOLATION,
+            detail="Não autenticado ou token expirado",
+        )
     try:
-        if not access_token:
-            raise HTTPException(
-                status_code=401,
-                detail="Não autenticado",
+        valid = jwt.valid(access_token)
+        return Authenticated(
+                auth_id=int(valid["id"]),
+                type=valid["type"],
+                chat_id=int(valid["chat_id"]) if valid.get("chat_id") is not None else None,
             )
-        return jwt.valid(access_token)
     except jwt.ExpiredSignatureError or jwt.InvalidTokenError:
         raise WebSocketException(
             status_code=status.WS_1008_POLICY_VIOLATION,

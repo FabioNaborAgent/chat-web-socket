@@ -1,16 +1,15 @@
 from fastapi import APIRouter, HTTPException, Response, status,Depends
+from schemas.authenticated import Authenticated
 from core.dependencies import get_auth_service, get_authenticate
 from services.auth_service import AuthService
 from schemas.auth import AuthSchema
+from dataclasses import asdict
 
 auth_router = APIRouter()
 
 @auth_router.get("/me")
-async def me(auth: dict = Depends(get_authenticate)):
-    return {
-        'id':int(auth['id']),
-        'type':auth['type'],
-    }
+async def me(auth: Authenticated = Depends(get_authenticate)):
+    return asdict(auth)
 
 @auth_router.post("/login")
 async def login(body: AuthSchema, response:Response, auth_service: AuthService = Depends(get_auth_service)):

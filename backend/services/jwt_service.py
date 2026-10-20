@@ -2,12 +2,10 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+
 from datetime import datetime, timedelta, timezone
 from typing import Literal
-
-from fastapi import HTTPException
 import jwt
-from jwt.exceptions import InvalidTokenError
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -49,18 +47,10 @@ class JwtService:
         )
 
     def valid(self, token:str) :
-        try:
-            payload = jwt.decode(
-                token,
-                self.secret_key,
-                algorithms=[self.algorithm],
-                options={'require': ['id', 'type', 'iat', 'exp']},
-            )
-            if payload is None:
-                raise HTTPException(
-                    status_code=401,
-                    detail="Token inválido ou expirado",
-                )
-            return payload
-        except InvalidTokenError:
-            return None
+        payload = jwt.decode(
+            token,
+            self.secret_key,
+            algorithms=[self.algorithm],
+            options={'require': ['id', 'type', 'iat', 'exp']},
+        )
+        return payload

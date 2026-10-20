@@ -1,7 +1,6 @@
-from typing import Literal
-
 from fastapi import HTTPException, status
 
+from schemas.authenticated import Authenticated
 from services.message_service import MessageService
 from core.connection_manager import ConnectionManager
 from models.chat import Chat
@@ -11,8 +10,6 @@ from repositories.client_repository import ClientRepository
 from repositories.user_repository import UserRepository
 from schemas.chat import ChatCreate
 from services.jwt_service import JwtService
-
-from time import sleep
 
 
 class ChatService:
@@ -30,18 +27,18 @@ class ChatService:
         self.ws_manager = ws_manager
         self.jwt = jwt
 
-    async def get_by_user(self, type:Literal['agent', 'client'], id:int):
-        if type == 'client':
+    async def get_by_user(self, auth:Authenticated):
+        if auth.type == 'client':
             raise HTTPException(
                             status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Acesso negado!"
                         )
-        chats = await self.chat_repository.get_by_user(id)
+        chats = await self.chat_repository.get_by_user(auth.auth_id)
         if not chats:
             return []
         return chats
 
-    async def finalized(self, id:int, type:Literal['agent', 'client'], chat_id:int):
+    async def finalize_chat(self, auth:Authenticated, chat_id:int):
         chat = await self.chat_repository.get_by_id(chat_id)
 
         if chat.status == False:
@@ -53,7 +50,7 @@ class ChatService:
                     detail="Não encontrado"
         )
 
-        if (type == 'agent' and str(chat.user_id) != id) or (type == 'client' and str(chat.client_id) != id):
+        if (auth.type == 'agent' and chat.user_id != auth.auth_id) or (auth.type == 'client' and chat.client_id != auth.auth_id):
             raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="Você não faz parte desse chat!"
@@ -63,7 +60,7 @@ class ChatService:
 
         result = await self.chat_repository.update(chat)
 
-        await self.message_service.create(id, chat_id, type, '[Atenção] Chat Finalizado', False)
+        await self.message_service.create(auth, chat_id, '[Atenção] Chat Finalizado', False)
 
         return result
 
@@ -96,7 +93,7 @@ class ChatService:
             )
         )
         
-        await self.ws_manager.send('agent', agent_id, {
+        await self.ws_manager.send(Authenticated(auth_id=agent_id, type='agent'), {
             "event": "new-chat",
             "data": {
                 "id": chat.id,
