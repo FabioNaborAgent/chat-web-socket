@@ -38,7 +38,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode}) {
         
                 try {
                     const event = JSON.parse(message.data);
-        
+                    console.log(event)
                     if (
                         typeof event === "object" &&
                         event !== null &&

@@ -6,6 +6,7 @@ interface NewMessage {
     chat_id:number
     is_client:boolean
     message:string
+    created_at:string
 }
 interface NewChat{
     id: number,

@@ -7,6 +7,15 @@ import { InformationDialog } from "./informations";
 export function ChatItem({data}:{data:ChatListResponse}) {
     const router = useRouter()
 
+    const formattedDate = data.last_message ? new Date(
+                data.last_message.endsWith("Z")
+              ? data.last_message
+              : `${data.last_message}Z`
+      ).toLocaleString("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+      })
+    : "Sem Mensagem";
+
     return (
         <Item>
             <ItemMedia variant="icon">
@@ -15,7 +24,7 @@ export function ChatItem({data}:{data:ChatListResponse}) {
 
             <ItemContent>
                 <ItemTitle>{data.name}</ItemTitle>
-                <ItemDescription>{data.subject} - {data.last_message ?? 'Sem Mensagem'}</ItemDescription>
+                <ItemDescription>{data.subject} - {formattedDate}</ItemDescription>
             </ItemContent>
 
             <ItemActions>

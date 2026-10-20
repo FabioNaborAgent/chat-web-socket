@@ -16,6 +16,7 @@ export function Message({chat_id}:{chat_id:string}) {
     const useListMessage = useListMessageChat()
 
     useEffect(() => {
+        if (status !== "connected") return;
         useListMessage.mutate({
             chat_id:chat_id
         }, {

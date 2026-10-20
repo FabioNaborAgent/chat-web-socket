@@ -7,6 +7,8 @@ from models.chat import Chat
 from models.user import User
 from models.message import Message
 
+from datetime import datetime
+
 class ChatRepository:
 
     def __init__(self, db: AsyncSession):
@@ -37,7 +39,8 @@ class ChatRepository:
                 Client.email,
                 Client.telephone
             )
-            .order_by(func.max(Message.created_at).desc().nulls_last())
+            .order_by(func.max(Message.created_at).desc().nulls_last(),
+            Chat.id.desc())
         )
         return [dict(row) for row in result.mappings().all()]
 

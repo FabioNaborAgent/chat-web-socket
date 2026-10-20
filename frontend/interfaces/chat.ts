@@ -14,6 +14,8 @@ interface ChatListResponse {
 
 interface ChatMessageResponse {
     id:number
+    chat_id:number
     message:string
     is_client:boolean
+    created_at:string
 }

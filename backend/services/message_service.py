@@ -62,6 +62,7 @@ class MessageService:
                 "chat_id": chat.id,
                 "is_client": auth.type == 'client',
                 "message": message,
+                "created_at":str(result.created_at)
             }
         }
 

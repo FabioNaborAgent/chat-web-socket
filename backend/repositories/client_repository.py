@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.client import Client
+from datetime import datetime
 
 class ClientRepository:
 

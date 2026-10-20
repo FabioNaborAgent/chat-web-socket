@@ -15,6 +15,8 @@ export function ChatList() {
     const [chats, setChats] = useState<ChatListResponse[]>([])
 
     useEffect(() => {
+        if (!lastEvent) return;
+
         if (lastEvent?.event == "new-chat"){
             const newChat = lastEvent.data as ChatListResponse;
     
@@ -27,9 +29,35 @@ export function ChatList() {
             return;
         }
 
+        if (lastEvent?.event == "new-message") {
+
+            const newMessage = lastEvent.data as ChatMessageResponse;
+            
+            setChats((previousChats) => {
+                const chat = previousChats.find((chat) => String(chat.id) === String(newMessage.chat_id))
+
+                if (!chat) return previousChats;
+
+                const updatedChat = {
+                    ...chat,
+                    last_message: newMessage.created_at,
+                };
+
+                return [
+                    updatedChat,
+                    ...previousChats.filter(
+                        (chat) =>
+                            String(chat.id) !== String(newMessage.chat_id)
+                    ),
+                ];
+            });
+            return;
+        };
+
     }, [lastEvent])
 
     useEffect(() => {
+        if (status !== "connected") return;
         listChat.mutate(undefined, {
             onSuccess: (response) => {
                 setChats(response);
@@ -47,7 +75,7 @@ export function ChatList() {
                 }
             }
         })
-    }, [])
+    }, [status])
 
     return (
         <CardDefault title={`Atendimento` } description="Seus atendimentos">
