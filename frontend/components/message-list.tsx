@@ -20,7 +20,7 @@ export function MessageList({ messages } : {messages:ChatMessageResponse[]}) {
 
 
     return (
-        <div className="grid gap-4 max-h-80 overflow-auto">
+        <div className="grid gap-4 h-full overflow-auto">
             {messages.map((msg) => {
                 const isOwnMessage = (user.type === "client") === msg.is_client;
                 return (

@@ -26,21 +26,46 @@ class ChatRepository:
         return chat
 
     async def get_by_user(self, user_id: int):
+        last_message = (
+            select(
+                Message.chat_id.label("chat_id"),
+                Message.created_at.label("created_at"),
+                Message.is_client.label("is_client"),
+                func.row_number()
+                .over(
+                    partition_by=Message.chat_id,
+                    order_by=(
+                        Message.created_at.desc(),
+                        Message.id.desc(),
+                    ),
+                )
+                .label("rn"),
+            )
+            .subquery()
+        )
+
         result = await self.db.execute(
-            select(Chat.id, Client.name, Chat.subject, Client.email, Client.telephone, func.max(Message.created_at).label("last_message"))
-            .select_from(Chat)
-            .join(Client, Client.id == Chat.client_id)
-            .outerjoin(Message, Message.chat_id == Chat.id)
-            .where(Chat.user_id == user_id, Chat.status == True)
-            .group_by(
+            select(
                 Chat.id,
                 Client.name,
                 Chat.subject,
                 Client.email,
-                Client.telephone
+                Client.telephone,
+                last_message.c.created_at.label("last_message"),
+                last_message.c.is_client.label("last_message_is_client"),
             )
-            .order_by(func.max(Message.created_at).desc().nulls_last(),
-            Chat.id.desc())
+            .select_from(Chat)
+            .join(Client, Client.id == Chat.client_id)
+            .outerjoin(last_message,
+                       (last_message.c.chat_id == Chat.id) & (last_message.c.rn == 1))
+            .where(
+                Chat.user_id == user_id,
+                Chat.status.is_(True),
+            )
+            .order_by(
+                last_message.c.created_at.desc().nulls_last(),
+                Chat.id.desc(),
+            )
         )
         return [dict(row) for row in result.mappings().all()]
 

@@ -27,7 +27,7 @@ export function CardDefault({title, description, children}:{title:string, descri
                         </div>
                         <CardDescription>{description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="max-h-7/12 overflow-auto">
+                    <CardContent className="max-h-7/12 overflow-auto h-150">
                         {children}
                     </CardContent>
                 </Card>

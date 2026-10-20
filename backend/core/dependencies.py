@@ -70,8 +70,8 @@ async def get_authenticate(access_token: str | None = Cookie(default=None), jwt:
 async def get_websocket_authenticate(access_token: str | None = Cookie(default=None), jwt: JwtService = Depends(get_jwt_service)) -> Authenticated:
     if not access_token:
         raise WebSocketException(
-            status_code=status.WS_1008_POLICY_VIOLATION,
-            detail="Não autenticado ou token expirado",
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Não autenticado ou token expirado",
         )
     try:
         valid = jwt.valid(access_token)
@@ -82,6 +82,6 @@ async def get_websocket_authenticate(access_token: str | None = Cookie(default=N
             )
     except jwt.ExpiredSignatureError or jwt.InvalidTokenError:
         raise WebSocketException(
-            status_code=status.WS_1008_POLICY_VIOLATION,
-            detail="Não autenticado ou token expirado",
+            code=status.WS_1008_POLICY_VIOLATION,
+            reason="Não autenticado ou token expirado",
         )

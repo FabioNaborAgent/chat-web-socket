@@ -102,7 +102,7 @@ class ChatService:
                 "email":client.email,
                 "telephone":client.telephone,
                 "user_id": chat.user_id,
-                "client_id": chat.client_id
+                "client_id": chat.client_id,
             }
         })
 

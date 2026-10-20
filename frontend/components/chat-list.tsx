@@ -18,7 +18,7 @@ export function ChatList() {
         if (!lastEvent) return;
 
         if (lastEvent?.event == "new-chat"){
-            const newChat = lastEvent.data as ChatListResponse;
+            const newChat = {...lastEvent.data, last_message_is_client: undefined} as ChatListResponse;
     
             setChats((previousChats) => {
                 if (previousChats.some((chat) => chat.id === newChat.id)) {
@@ -32,7 +32,7 @@ export function ChatList() {
         if (lastEvent?.event == "new-message") {
 
             const newMessage = lastEvent.data as ChatMessageResponse;
-            
+
             setChats((previousChats) => {
                 const chat = previousChats.find((chat) => String(chat.id) === String(newMessage.chat_id))
 
@@ -42,6 +42,9 @@ export function ChatList() {
                     ...chat,
                     last_message: newMessage.created_at,
                 };
+                updatedChat.last_message_is_client = newMessage.is_client
+
+                console.log()
 
                 return [
                     updatedChat,

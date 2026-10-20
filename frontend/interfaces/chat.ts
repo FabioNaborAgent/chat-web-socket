@@ -10,6 +10,7 @@ interface ChatListResponse {
     email:string
     telephone:string
     last_message?: string
+    last_message_is_client:boolean | undefined
 }
 
 interface ChatMessageResponse {
