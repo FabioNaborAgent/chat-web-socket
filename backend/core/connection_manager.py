@@ -1,10 +1,14 @@
 
 from collections import defaultdict
-from typing import Any, Literal
+from typing import List, Literal
+
 from fastapi import WebSocket
 import asyncio
 
+from schemas.websocket import NewChatEvent, NewMessageEvent
 from schemas.authenticated import Authenticated
+
+from dataclasses import asdict
 
 class ConnectionManager:
     def __init__(self):
@@ -38,13 +42,17 @@ class ConnectionManager:
         async with self.lock:
             return [user_id for user_id, socket in self.connections[type].items() if socket]
 
-    async def send(self, auth: Authenticated, message: dict[str, Any]):
+    async def send(self, auth: Authenticated, message: NewMessageEvent | NewChatEvent):
         async with self.lock:
             connections = list(self.connections[auth.type].get(auth.auth_id, set()))
 
         for websocket in connections:
             try:
-                await websocket.send_json(message)
+                await websocket.send_json(asdict(message))
             except Exception:
                 await self.disconnect(auth, websocket)
+
+    async def send_for_list(self, auth_list:List[Authenticated], message: NewMessageEvent | NewChatEvent):
+        for auth in auth_list:
+            await self.send(auth, message)
 

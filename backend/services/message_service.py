@@ -2,6 +2,7 @@ from typing import Literal
 
 from fastapi import HTTPException, status
 
+from schemas.websocket import NewMessage, NewMessageEvent
 from schemas.authenticated import Authenticated
 from core.connection_manager import ConnectionManager
 from models.message import Message
@@ -55,18 +56,17 @@ class MessageService:
             message=message
         ))
 
-        ws_payload = {
-            "event": "new-message",
-            "data": {
-                "id": result.id,
-                "chat_id": chat.id,
-                "is_client": auth.type == 'client',
-                "message": message,
-                "created_at":str(result.created_at)
-            }
-        }
-
-        await self.ws_manager.send(Authenticated(chat.client_id, 'client'), ws_payload)
-        await self.ws_manager.send(Authenticated(chat.user_id, 'agent'), ws_payload)
+        await self.ws_manager.send_for_list([
+             Authenticated(chat.client_id, 'client'),
+             Authenticated(chat.user_id, 'agent')
+        ], NewMessageEvent(
+             data=NewMessage(
+                  id=result.id,
+                  chat_id=chat.id,
+                  is_client=auth.type == 'client',
+                  message=message,
+                  created_at=str(result.created_at)
+             )
+        ))
         
         return result

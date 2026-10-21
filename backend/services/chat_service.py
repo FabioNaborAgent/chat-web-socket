@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 
+from schemas.websocket import NewChat, NewChatEvent
 from schemas.authenticated import Authenticated
 from services.message_service import MessageService
 from core.connection_manager import ConnectionManager
@@ -92,19 +93,21 @@ class ChatService:
                 client_id=client.id
             )
         )
-        
-        await self.ws_manager.send(Authenticated(auth_id=agent_id, type='agent'), {
-            "event": "new-chat",
-            "data": {
-                "id": chat.id,
-                "name": client.name,
-                "subject": chat.subject,
-                "email":client.email,
-                "telephone":client.telephone,
-                "user_id": chat.user_id,
-                "client_id": chat.client_id,
-            }
-        })
+
+        await self.ws_manager.send(
+            Authenticated(auth_id=agent_id, type='agent'),
+            NewChatEvent(
+                data=NewChat(
+                    id= chat.id,
+                    name= client.name,
+                    subject= chat.subject,
+                    email=client.email,
+                    telephone=client.telephone,
+                    user_id= chat.user_id,
+                    client_id= chat.client_id,
+                )
+            )
+        )
 
         return {
             'chat_id':chat.id,
