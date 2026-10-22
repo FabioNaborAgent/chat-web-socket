@@ -3,7 +3,7 @@
 ## Linguagem/Biblioteca Utilizadas
 
 - **Python - BackEnd:** FastApi, SQLAlchemy
-- **Next - FrontEnd:** Tailwind, Axios, Shardcn - componentes
+- **Next - FrontEnd:** Tailwind, Axios, Shadcn - componentes
 - **SQLite - Banco de dados**
 
 ## Usuário para teste
